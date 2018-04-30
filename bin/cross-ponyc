@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+trap "exit 1" ERR
+
+PONY_VER=0.21.3
+PROJECT=${PWD##*/}
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+DKGRAY='\033[1;30m'
+NC='\033[0m'
+
+TARGET=$1
+shift
+
+case $TARGET in
+linux)
+  TRIPLE=x86_64-pc-linux-gnu
+  ;;
+windows)
+  TRIPLE=x86_64-pc-windows-msvc
+  ;;
+*)
+  echo -e "${RED}Please provide target platform: 'linux' or 'windows'.${NC}"
+  exit 1
+esac
+
+echo -e "${DKGRAY}Triple set to ${GREEN}${TRIPLE}${NC}"
+
+# Fetch package dependencies.
+if [ -f ./bundle.json ]; then
+  echo -e "${DKGRAY}Fetching package dependencies...${NC}"
+  stable fetch
+fi
+
+# Generate LLVM bitcode file.
+echo -e "${DKGRAY}Compiling pony to LLVM bitcode...${NC}"
+
+if [ -f ./bundle.json ]; then
+  stable env ponyc --triple=${TRIPLE} -r=bitcode "$@"
+else
+  ponyc --triple=${TRIPLE} -r=bitcode "$@"
+fi
+
+# Compile bitcode to object code.
+echo -e "${DKGRAY}Compiling bitcode to object code...${NC}"
+llc-6.0 -mtriple ${TRIPLE} ${PROJECT}.bc -filetype obj
+
+# Link it all.
+
+# Prepare the list of extra libraries.
+# Convert "lib1 lib2 lib3" to array (lib1 lib2 lib3).
+# Later on, the array will be converted to linker command options -llib1 -llib2 -llib3.
+IFS=' ' read -r -a EXTRA_LIBS_ARRAY <<< "$EXTRA_LIBS"
+
+case $TARGET in
+linux)
+
+echo -e "${DKGRAY}Linking executable => ${GREEN}./${PROJECT}-linux-amd64${NC}"
+
+clang-6.0 \
+  -o ./${PROJECT}-linux-amd64 \
+  -O3 \
+  --target=${TRIPLE} \
+  -mcx16 \
+  -fuse-ld=lld \
+  ./${PROJECT}.o \
+  -L"/usr/local/lib/pony/${PONY_VER}/bin/" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin/" \
+  -L"/usr/local/lib/pony/${PONY_VER}/bin/../lib" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin/../lib" \
+  -L"/usr/local/lib/pony/${PONY_VER}/bin/../packages" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin/../packages" \
+  -L"/usr/local/lib" -Wl,-rpath,"/usr/local/lib" \
+  -L"/usr/local/lib/extra/linux-amd64/" -Wl,-rpath,"/usr/local/lib/extra/linux-amd64/" \
+  -Wl,--start-group \
+  -lrt \
+  -lcrypto \
+  -lpcre2-8 \
+  -lssl \
+  -latomic \
+  -Wl,--end-group \
+  -lpthread \
+  -lponyrt \
+  -ldl \
+  -lm \
+  "${EXTRA_LIBS_ARRAY[@]/#/-l}" \
+  -Wl,--export-dynamic-symbol=__PonyDescTablePtr \
+  -Wl,--export-dynamic-symbol=__PonyDescTableSize
+  ;;
+
+windows)
+
+echo -e "${DKGRAY}Linking executable => ${GREEN}./${PROJECT}-windows-amd64.exe${NC}"
+
+clang-6.0 \
+  -o ./${PROJECT}-windows-amd64.exe \
+  -O3 \
+  -w \
+  --target=${TRIPLE} \
+  -mcx16 \
+  -fuse-ld=lld \
+  -Wl,-debug \
+  -Wl,-ignore:4099 \
+  -Wl,-machine:X64 \
+  ./${PROJECT}.obj \
+  -L"/usr/local/lib/windows-amd64/ucrt/" \
+  -L"/usr/local/lib/windows-amd64/um/" \
+  -L"/usr/local/lib/windows-amd64/msvc/" \
+  -L"/usr/local/lib/windows-amd64/ponyc/" \
+  -L"/usr/local/lib/extra/windows-amd64/" \
+  -lcrypto \
+  -lpcre2-8 \
+  -lssl \
+  -lkernel32 \
+  -lmsvcrt \
+  -lws2_32 \
+  -ladvapi32 \
+  -lvcruntime \
+  -llegacy_stdio_definitions \
+  -ldbghelp \
+  -lucrt \
+  -llibponyrt \
+  "${EXTRA_LIBS_ARRAY[@]/#/-l}"
+  ;;
+
+esac
+
+echo -e "${GREEN}Done${NC}"
