@@ -5,8 +5,8 @@ Utility Docker image for cross-compiling Pony programs.
 Cross-compile Pony?
 -------------------
 
-Use this image to compile and link Pony programs to any of the supported target platforms regardless of the platform
-the host running the container. For example, one can build Windows executables while running this image on a Linux host.
+Use this image to compile and link Pony programs to any of the supported target platforms regardless of the host platform.
+For example, one can build Windows executables while running this image on a Linux host.
 
 Currently supported target platforms:
 

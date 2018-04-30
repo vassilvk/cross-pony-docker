@@ -14,11 +14,9 @@ COPY bin/ /usr/local/bin/
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    software-properties-common \
-    python-software-properties \
     wget \
   # Install LLVM 6.
-  && add-apt-repository 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-6.0 main' \
+  && echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-6.0 main" | tee -a /etc/apt/sources.list \
   && wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add - \
   # Clean and update apt lists - if we don't, LLVM's installation croaks with a "bad checksum" error.
   && apt-get clean \
@@ -46,8 +44,6 @@ RUN apt-get update \
   && mkdir -p /usr/local/lib/extra/windows-amd64/ \
   # Cleanup.
   && rm -rf /tmp/cross-pony/ \
-  && apt-get remove -y software-properties-common python-software-properties \
-  && apt autoremove -y \
   && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["cross-ponyc"]
