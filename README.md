@@ -1,5 +1,4 @@
-cross-pony
-==========
+# cross-pony
 
 Utility Docker image for cross-compiling Pony programs.
 
@@ -72,7 +71,7 @@ Extra libraries should be volume-mounted into their respective location in the c
 - **Linux libraries:** `/usr/local/lib/extra/linux-amd64/`
 - **Windows libraries:** `/usr/local/lib/extra/windows-amd64/`
 
-For example, [jemc/pony-zmq](https://github.com/jemc/pony-zmq) uses [libsodium](https://download.libsodium.org/doc/installation/index.html).
+For example, [jemc/pony-zmq](https://github.com/jemc/pony-zmq) uses [libsodium](https://download.libsodium.org/doc/).
 Follow these steps to build its tests for Windows:
 
 * Clone [jemc/pony-zmq](https://github.com/jemc/pony-zmq)
@@ -93,5 +92,3 @@ The image contains the following:
 
 * `ponyc 0.21.3`
 * `LLVM 6.0.1`
-* Linux static libraries
-* Windows 10 static libraries
