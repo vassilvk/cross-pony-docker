@@ -11,7 +11,6 @@ DKGRAY='\033[1;30m'
 NC='\033[0m'
 
 TARGET=$1
-shift
 
 case $TARGET in
 linux)
@@ -24,6 +23,10 @@ windows)
   echo -e "${RED}Please provide target platform: 'linux' or 'windows'.${NC}"
   exit 1
 esac
+
+# Consume the target argument so that we can pull the rest of the arguments
+# and pass them through to ponyc (see "$@" below).
+shift
 
 echo -e "${DKGRAY}Triple set to ${GREEN}${TRIPLE}${NC}"
 
@@ -65,11 +68,11 @@ clang-6.0 \
   -mcx16 \
   -fuse-ld=lld \
   ./${PROJECT}.o \
-  -L"/usr/local/lib/pony/${PONY_VER}/bin/" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin/" \
-  -L"/usr/local/lib/pony/${PONY_VER}/bin/../lib" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin/../lib" \
-  -L"/usr/local/lib/pony/${PONY_VER}/bin/../packages" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin/../packages" \
+  -L"/usr/local/lib/pony/${PONY_VER}/bin" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin" \
+  -L"/usr/local/lib/pony/${PONY_VER}/lib" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/lib" \
+  -L"/usr/local/lib/pony/${PONY_VER}/packages" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/packages" \
   -L"/usr/local/lib" -Wl,-rpath,"/usr/local/lib" \
-  -L"/usr/local/lib/extra/linux-amd64/" -Wl,-rpath,"/usr/local/lib/extra/linux-amd64/" \
+  -L"/usr/local/lib/extra/linux-amd64" -Wl,-rpath,"/usr/local/lib/extra/linux-amd64" \
   -Wl,--start-group \
   -lrt \
   -lcrypto \
