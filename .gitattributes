@@ -2,6 +2,7 @@
 * text=auto
 run eol=lf
 finish eol=lf
+cross-ponyc eol=lf
 .gitattributes text eol=lf
 .gitignore text eol=lf
 .gitmodules text eol=lf

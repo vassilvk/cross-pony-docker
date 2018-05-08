@@ -2,7 +2,8 @@
 
 trap "exit 1" ERR
 
-PONY_VER=0.21.3
+PONY_VERSION=0.21.3
+
 PROJECT=${PWD##*/}
 
 RED='\033[0;31m'
@@ -13,14 +14,21 @@ NC='\033[0m'
 TARGET=$1
 
 case $TARGET in
-linux)
+linux-amd64)
   TRIPLE=x86_64-pc-linux-gnu
+  TARGET_CPU=x86-64
   ;;
-windows)
+linux-arm64v8)
+  TRIPLE=aarch64-unknown-linux-gnu
+  # Run `llc -march=aarch64 -mattr=help` to obtain a list of supported CPUs for arm64v8.
+  TARGET_CPU=generic
+  ;;
+windows-amd64)
   TRIPLE=x86_64-pc-windows-msvc
+  TARGET_CPU=x86-64
   ;;
 *)
-  echo -e "${RED}Please provide target platform: 'linux' or 'windows'.${NC}"
+  echo -e "${RED}Please provide target platform: 'linux-amd64', 'linux-arm64v8' or 'windows-amd64'.${NC}"
   exit 1
 esac
 
@@ -29,6 +37,7 @@ esac
 shift
 
 echo -e "${DKGRAY}Triple set to ${GREEN}${TRIPLE}${NC}"
+echo -e "${DKGRAY}Target CPU set to ${GREEN}${TARGET_CPU}${NC}"
 
 # Fetch package dependencies.
 if [ -f ./bundle.json ]; then
@@ -40,9 +49,9 @@ fi
 echo -e "${DKGRAY}Compiling pony to LLVM bitcode...${NC}"
 
 if [ -f ./bundle.json ]; then
-  stable env ponyc --triple=${TRIPLE} -r=bitcode "$@"
+  stable env ponyc --triple=${TRIPLE} --cpu=${TARGET_CPU} -r=bitcode "$@"
 else
-  ponyc --triple=${TRIPLE} -r=bitcode "$@"
+  ponyc --triple=${TRIPLE} --cpu=${TARGET_CPU} -r=bitcode "$@"
 fi
 
 # Compile bitcode to object code.
@@ -57,7 +66,9 @@ llc-6.0 -mtriple ${TRIPLE} ${PROJECT}.bc -filetype obj
 IFS=' ' read -r -a EXTRA_LIBS_ARRAY <<< "$EXTRA_LIBS"
 
 case $TARGET in
-linux)
+
+#---------------------------------------------------------------------------------------------
+linux-amd64)
 
 echo -e "${DKGRAY}Linking executable => ${GREEN}./${PROJECT}-linux-amd64${NC}"
 
@@ -68,9 +79,9 @@ clang-6.0 \
   -mcx16 \
   -fuse-ld=lld \
   ./${PROJECT}.o \
-  -L"/usr/local/lib/pony/${PONY_VER}/bin" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/bin" \
-  -L"/usr/local/lib/pony/${PONY_VER}/lib" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/lib" \
-  -L"/usr/local/lib/pony/${PONY_VER}/packages" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VER}/packages" \
+  -L"/usr/local/lib/pony/${PONY_VERSION}/bin" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VERSION}/bin" \
+  -L"/usr/local/lib/pony/${PONY_VERSION}/lib" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VERSION}/lib" \
+  -L"/usr/local/lib/pony/${PONY_VERSION}/packages" -Wl,-rpath,"/usr/local/lib/pony/${PONY_VERSION}/packages" \
   -L"/usr/local/lib" -Wl,-rpath,"/usr/local/lib" \
   -L"/usr/local/lib/extra/linux-amd64" -Wl,-rpath,"/usr/local/lib/extra/linux-amd64" \
   -Wl,--start-group \
@@ -89,7 +100,40 @@ clang-6.0 \
   -Wl,--export-dynamic-symbol=__PonyDescTableSize
   ;;
 
-windows)
+#---------------------------------------------------------------------------------------------
+linux-arm64v8)
+
+echo -e "${DKGRAY}Linking executable => ${GREEN}./${PROJECT}-linux-arm64v8${NC}"
+
+clang-6.0 \
+  -o ./${PROJECT}-linux-arm64v8 \
+  -O3 \
+  --target=${TRIPLE} \
+  --sysroot=/opt/aarch64-linux-gnu \
+  -mcx16 \
+  -fuse-ld=lld \
+  ./${PROJECT}.o \
+  -L"/opt/aarch64-linux-gnu/usr/lib/aarch64-linux-gnu/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/lib/aarch64-linux-gnu/" \
+  -L"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/bin/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/bin/" \
+  -L"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/lib/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/lib/" \
+  -L"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/packages/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/packages/" \
+  -L"/opt/aarch64-linux-gnu/usr/local/lib/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/" \
+  -L"/opt/aarch64-linux-gnu/usr/local/lib/extra/linux-arm64v8/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/extra/linux-arm64v8/" \
+  -lrt \
+  -lcrypto \
+  -lpcre2-8 \
+  -lssl \
+  -latomic \
+  -lpthread \
+  -lponyrt \
+  -ldl \
+  -lm \
+  -Wl,--export-dynamic-symbol=__PonyDescTablePtr \
+  -Wl,--export-dynamic-symbol=__PonyDescTableSize
+  ;;
+
+#---------------------------------------------------------------------------------------------
+windows-amd64)
 
 echo -e "${DKGRAY}Linking executable => ${GREEN}./${PROJECT}-windows-amd64.exe${NC}"
 
