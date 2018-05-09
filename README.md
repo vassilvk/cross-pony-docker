@@ -100,5 +100,5 @@ Image contents
 
 The image contains the following:
 
-* `ponyc 0.21.3` + LLVM 3.9.1
+* `ponyc 0.21.3 + LLVM 3.9.1`
 * `LLVM 6.0.1`
