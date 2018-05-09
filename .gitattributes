@@ -7,6 +7,7 @@ cross-ponyc eol=lf
 .gitignore text eol=lf
 .gitmodules text eol=lf
 Dockerfile text eol=lf
+Dockerfile-arm64v8 text eol=lf
 *.sh text eol=lf
 *.yml text eol=lf
 *.conf text eol=lf

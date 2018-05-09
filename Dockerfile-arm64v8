@@ -1,0 +1,36 @@
+# Dockerfile of vassilvk/arm64v8-ponyc
+
+# Build stage.
+FROM arm64v8/ubuntu:16.04
+
+RUN apt-get update \
+  && apt-get install -y \
+    g++ \
+    git \
+    libncurses5-dev \
+    libpcre2-dev \
+    libssl-dev \
+    make \
+    wget \
+    xz-utils \
+    zlib1g-dev \
+  # Deploy LLVM.
+  && echo Deploying LLVM... \
+  && wget -q -O - http://releases.llvm.org/3.9.1/clang+llvm-3.9.1-aarch64-linux-gnu.tar.xz \
+    | tar xJf - --strip-components 1 -C /usr/local/ clang+llvm-3.9.1-aarch64-linux-gnu \
+  # Clone ponyc.
+  && cd /tmp \
+  && git clone https://github.com/ponylang/ponyc.git \
+  # Build ponyc.
+  && cd /tmp/ponyc \
+  # Remove .git. This will prevent git-tagging the target folder where ponyc is installed.
+  && rm -rf .git \
+  && export CC=`which gcc` \
+  && make CXXFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" \
+  && make install \
+  # Clean up.
+  && cd / \
+  # && rm -rf /tmp/ponyc \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV CC /usr/local/bin/clang
