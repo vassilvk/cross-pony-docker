@@ -117,7 +117,6 @@ clang-6.0 \
   -L"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/bin/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/bin/" \
   -L"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/lib/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/lib/" \
   -L"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/packages/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/pony/${PONY_VERSION}/packages/" \
-  -L"/opt/aarch64-linux-gnu/usr/local/lib/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/" \
   -L"/opt/aarch64-linux-gnu/usr/local/lib/extra/linux-arm64v8/" -Wl,-rpath-link,"/opt/aarch64-linux-gnu/usr/local/lib/extra/linux-arm64v8/" \
   -lrt \
   -lcrypto \
